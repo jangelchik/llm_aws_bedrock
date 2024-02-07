@@ -4,51 +4,52 @@ import sys
 import boto3
 import streamlit as st
 
-## We will be suing Titan Embeddings Model To generate Embedding
-
+## titan embeddings
 from langchain_community.embeddings import BedrockEmbeddings
 from langchain.llms.bedrock import Bedrock
 
-## Data Ingestion
-
+## data intake
 import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_community.document_loaders import PyPDFLoader, PyPDFDirectoryLoader
 
-# Vector Embedding And Vector Store
-
+# vector embedding, vector store
 from langchain.vectorstores import FAISS
 
-## LLm Models
+## Models
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 
-## Bedrock Clients
+## Bedrock clients
 bedrock=boto3.client(service_name="bedrock-runtime")
 bedrock_embeddings=BedrockEmbeddings(model_id="amazon.titan-embed-text-v1",client=bedrock)
 
 
-## Data ingestion
+## data ingestion
 def data_ingestion():
+
+    # navigate to folder storing data
     loader=PyPDFDirectoryLoader("data")
     documents=loader.load()
 
-    # - in our testing Character split works better with this PDF data set
+    # - define a text splitter (after testing for optimal approach)
     text_splitter=RecursiveCharacterTextSplitter(chunk_size=10000,
                                                  chunk_overlap=1000)
     
     docs=text_splitter.split_documents(documents)
     return docs
 
-## Vector Embedding and vector store
-
+## vector embedding, vector store
 def get_vector_store(docs):
+
+    ## declare store
     vectorstore_faiss=FAISS.from_documents(
         docs,
         bedrock_embeddings
     )
     vectorstore_faiss.save_local("faiss_index")
 
+# claude model
 def get_claude_llm():
     ##create the Anthropic Model
     llm=Bedrock(model_id="ai21.j2-mid-v1",client=bedrock,
@@ -56,6 +57,7 @@ def get_claude_llm():
     
     return llm
 
+# llama2 model
 def get_llama2_llm():
     ##create the Anthropic Model
     llm=Bedrock(model_id="meta.llama2-70b-chat-v1",client=bedrock,
@@ -81,6 +83,7 @@ PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
 
+# get response from model
 def get_response_llm(llm,vectorstore_faiss,query):
     qa = RetrievalQA.from_chain_type(
     llm=llm,
@@ -95,12 +98,13 @@ def get_response_llm(llm,vectorstore_faiss,query):
     return answer['result']
 
 
+# our attempt at a "UI"
 def main():
-    st.set_page_config("Chat PDF")
+    st.set_page_config("Chat w/ PDF")
     
-    st.header("Chat with PDF using AWS Bedrock💁")
+    st.header("Chat with claude and/or llama2")
 
-    user_question = st.text_input("Ask a Question from the PDF Files")
+    user_question = st.text_input("How can I help you?")
 
     with st.sidebar:
         st.title("Update Or Create Vector Store:")
