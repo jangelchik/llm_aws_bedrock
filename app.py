@@ -20,7 +20,7 @@ from langchain.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 
-## Bedrock clients
+## bedrock clients
 bedrock=boto3.client(service_name="bedrock-runtime")
 bedrock_embeddings=BedrockEmbeddings(model_id="amazon.titan-embed-text-v1",client=bedrock)
 
@@ -51,7 +51,7 @@ def get_vector_store(docs):
 
 # claude model
 def get_claude_llm():
-    ##create the Anthropic Model
+    ##create the anthropic model
     llm=Bedrock(model_id="ai21.j2-mid-v1",client=bedrock,
                 model_kwargs={'maxTokens':512})
     
@@ -59,18 +59,19 @@ def get_claude_llm():
 
 # llama2 model
 def get_llama2_llm():
-    ##create the Anthropic Model
+    ##create the meta model
     llm=Bedrock(model_id="meta.llama2-70b-chat-v1",client=bedrock,
                 model_kwargs={'max_gen_len':512})
     
     return llm
 
+# declare a prompt template
+# def overall_context():
 prompt_template = """
 
 Human: Use the following pieces of context to provide a 
-concise answer to the question at the end but usse atleast summarize with 
-250 words with detailed explaantions. If you don't know the answer, 
-just say that you don't know, don't try to make up an answer.
+concise answer to my final question. Give explanations for your response. If you don't know the answer, 
+just say that you don't know, don't make up an answer.
 <context>
 {context}
 </context
@@ -98,7 +99,7 @@ def get_response_llm(llm,vectorstore_faiss,query):
     return answer['result']
 
 
-# our attempt at a "UI"
+# our attempt at a streamlit "UI"
 def main():
     st.set_page_config("Chat w/ PDF")
     
